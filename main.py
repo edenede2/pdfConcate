@@ -1,33 +1,34 @@
+import streamlit as st
 from pypdf import PdfReader, PdfWriter
+import io
 
-# Paths to the PDF files
-pdf1_path = '/Users/edeneldar/Library/Mobile Documents/com~apple~CloudDocs/Maman1.pdf'
-pdf2_path = '/Users/edeneldar/Library/Mobile Documents/com~apple~CloudDocs/Maman2.pdf'
-pdf3_path = '/Users/edeneldar/Library/Mobile Documents/com~apple~CloudDocs/Maman3.pdf'
-output_path = '/Users/edeneldar/Library/Mobile Documents/com~apple~CloudDocs/Maman.pdf'
+def concatenate_pdfs(pdf_files):
+    pdf_writer = PdfWriter()
 
-# Create PdfReader objects for each PDF file
-pdf1_reader = PdfReader(pdf1_path)
-pdf2_reader = PdfReader(pdf2_path)
-pdf3_reader = PdfReader(pdf3_path)
+    for pdf_file in pdf_files:
+        pdf_reader = PdfReader(pdf_file)
+        for page_num in range(len(pdf_reader.pages)):
+            pdf_writer.add_page(pdf_reader.pages[page_num])
 
-# Create a PdfWriter object
-pdf_writer = PdfWriter()
+    output = io.BytesIO()
+    pdf_writer.write(output)
+    output.seek(0)
+    return output
 
-# Add pages from the first PDF
-for page_num in range(len(pdf1_reader.pages)):
-    pdf_writer.add_page(pdf1_reader.pages[page_num])
+st.title("PDF Concatenator")
 
-# Add pages from the second PDF
-for page_num in range(len(pdf2_reader.pages)):
-    pdf_writer.add_page(pdf2_reader.pages[page_num])
+st.write("This app concatenates multiple PDF files into a single PDF file.")
 
-# Add pages from the third PDF
-for page_num in range(len(pdf3_reader.pages)):
-    pdf_writer.add_page(pdf3_reader.pages[page_num])
+new_file_name = st.text_input("Enter a title for the concatenated PDF file", "concatenated.pdf")
 
-# Write the combined PDF to a file
-with open(output_path, 'wb') as output_pdf:
-    pdf_writer.write(output_pdf)
+uploaded_files = st.file_uploader("Upload PDF files", type="pdf", accept_multiple_files=True)
 
-print(f"PDF files have been concatenated and saved as {output_path}")
+if st.button("Concatenate PDFs") and uploaded_files:
+    concatenated_pdf = concatenate_pdfs(uploaded_files)
+    st.success("PDF files concatenated successfully!")
+    st.download_button(
+        label="Download Concatenated PDF",
+        data=concatenated_pdf,
+        file_name=new_file_name,
+        mime="application/pdf"
+    )
